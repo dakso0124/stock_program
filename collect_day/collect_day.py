@@ -2,6 +2,7 @@ import win32com.client
 import sqlite3
 import time
 
+
 class DayCollect:
     def __init__(self):
         # 연결 여부 체크
@@ -15,6 +16,9 @@ class DayCollect:
 
         self.conn = sqlite3.connect("stock_db(day).db", isolation_level=None)  # sqlite 연결
         self.c = self.conn.cursor()
+
+    def __del__(self):
+        self.c.close()
 
     def reqeustData(self, obj, code):
         # 데이터 요청
@@ -64,6 +68,8 @@ class DayCollect:
             test = self.c.fetchall()
             if test[0][0] == 0:
                 last_index = idx-1
+
+                self.c.execute('delete from ' + codes[last_index][0])       # 중간에 끊긴 일별 데이터 테이블 삭제 후 다시 시작
                 break
 
         # 일자별 data object 생성
