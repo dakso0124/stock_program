@@ -28,7 +28,6 @@ class StockKind:
         self.c.execute("SELECT CODE FROM STOCK_KIND")
         codes = self.c.fetchall()
 
-        self.c.execute("CREATE TABLE IF NOT EXISTS STOCK_KIND (CODE text PRIMARY KEY, SECOND_CODE integer, NAME text)")  # 종목코드 & 서브코드 & 종목명 을 저장항 table 생성
         print("거래소 종목코드", len(codeList))
         print("번호 종목코드 2CODE 가격 종목명")
         for i, code in enumerate(codeList):
