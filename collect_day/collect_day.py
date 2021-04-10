@@ -60,6 +60,27 @@ class DayCollect:
                            (day, cur_pr, high_pr, low_pr, clo_pr, pr_diff, acc_vol, for_stor, for_stor_diff, for_perc, com_buy_vol, oot_cur_pr, oot_high_pr, oot_low_pr, oot_clo_pr, oot_pr_diff, oot_vol, for_buy_vol))
         return True
 
+    # 일자별 데이터 업데이트하기
+    def start_update_days_data(self, codes):
+        # 일자별 data object 생성
+        for index, code in enumerate(codes):    # 반복문을 통해
+            print('start insert to db : ' + code[0] + " : " + code[1])
+            # 종목코드 & 서브코드 & 종목명 을 저장항 table 생성
+            self.c.execute("CREATE TABLE IF NOT EXISTS " + code[0] + "(day integer PRIMARY KEY, cur_pr integer, "
+                                                                     "high_pr integer, low_pr integer, clo_pr integer, "
+                                                                     "pr_diff integer, acc_vol integer,"
+                                                                     "for_stor integer, for_stor_diff integer, "
+                                                                     "for_perc real, com_buy_vol integer, oot_cur_pr integer,"
+                                                                     "oot_high_pr integer, oot_low_pr integer, oot_clo_pr integer,"
+                                                                     "oot_pr_diff integer, oot_vol integer, for_buy_vol integer )")
+
+            self.objStockWeek.SetInputValue(0, code[0])  # 종목 코드설정.
+
+            if self.reqeustData(self.objStockWeek, code, index):     # Data를 가져오는데 성공하면
+                pass
+        self.conn.close()
+
+
     # 일자별 데이터 가져오기
     def start_get_days_data(self, codes):
         last_index = 0
