@@ -10,7 +10,7 @@ import multiple_real_time_finding_listmethod as real_time
 
 
 
-def start_collect_stock_kind():
+def start_collect_stock_kind():     # 종목코드 가져오기
     collect_stock_kind = sk.StockKind()
     return collect_stock_kind.start_collect()
 
@@ -50,7 +50,6 @@ def start_program():
     # start_collect_day_update(codes) # 모든 종목 일별 데이터 갱신
     start_get_real_time()
 
-# IT서비스, 해운사, 조선, 광고, 건설
 
 start_program()
 
