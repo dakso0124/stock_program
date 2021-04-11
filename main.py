@@ -58,9 +58,3 @@ start_program()
 # start_collect_day(codes)  # 모든 종목 일별 데이터 수집(전체)
 # start_collect_day_update(codes) # 모든 종목 일별 데이터 갱신
 # start_real_time_it_service(('IT서비스', '해운사', '조선', '광고', '건설'))
-
-
-
-
-
-
