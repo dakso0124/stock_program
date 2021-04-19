@@ -132,8 +132,6 @@ class NaverFinanceCrawler:  # 네이버 증권 크롤링 클래스
         stock_df = pd.read_csv(upjong_name + '.csv', encoding='utf-8')
         stock_df = stock_df[stock_df['reg_day'] < int(self.my_date)]
         stock_df = stock_df.sort_values('market_cap', ascending=False)
-        print(upjong_name)
-        print(stock_df)
         result = stock_df['code'][:5].tolist()
         print(upjong_name, result)
         return result
