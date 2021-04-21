@@ -1,3 +1,5 @@
+# investing_crawling.py
+
 import os
 import shutil
 import time
@@ -12,8 +14,8 @@ class InvestingCrawler:
     def __init__(self):
         self.base_url = 'https://kr.investing.com/'
 
-        self.login_id = '아이디'
-        self.login_pw = '비밀번호'
+        self.login_id = '아이디'       # csv 다운로드를 위해 로그인이 필수
+        self.login_pw = '비밀번호'                  # 구글, 페이스북 로그인이 아닌 이메일 회원가입으로 동작하게 작성됨
 
         self.kospi_url = 'indices/kospi-historical-data'
 
@@ -38,11 +40,13 @@ class InvestingCrawler:
         self.usa_10years_url = 'rates-bonds/us-10-yr-t-note-historical-data'
         self.usa_30years_url = 'rates-bonds/us-30-yr-t-bond-historical-data'
 
+        # 수집할 데이터 url list. DB에 입력할 컬럼순으로
         self.download_list = [self.kospi_url, self.dollar_won_url, self.euro_won_url, self.jap_won_url,
                               self.dollar_index_url, self.cny_won_url, self.gold_url, self.wti_url, self.nasdaq_url,
                               self.dowjones_url, self.euro_stocks_url, self.nikkei_url, self.hangsen_url,
                               self.usa_2years_url, self.usa_5years_url, self.usa_10years_url, self.usa_30years_url]
 
+        # 수집한 데이터 파일명 및 DB 컬럼명. 위 url 순서와 맞춰서 입력해야함
         self.new_file_name_list = ['kospi', 'dollar', 'euro', 'jap',
                                    'dollaridx', 'cny', 'gold', 'wti', 'nasdaq',
                                    'dowjones', 'eurostock', 'nikkei', 'hangsen',
@@ -59,17 +63,17 @@ class InvestingCrawler:
         self.apply_btn_xpath = '''//*[@id="applyBtn"]'''
 
         self.options = webdriver.ChromeOptions()        # download 폴더 변경을 위해 선언
-        self.options.add_experimental_option("prefs", {
+        self.options.add_experimental_option("prefs", { # 위치 확인할 것
             "download.default_directory": r"F:\StockProject\investing_crawling"
         })
 
         self.filepath = 'F:\StockProject\investing_crawling\\'      # 다운로드할 위치
 
-        self.conn = sqlite3.connect("g_data.db", isolation_level=None)  # sqlite 연결
+        self.conn = sqlite3.connect("global.db", isolation_level=None)  # sqlite 연결
         self.c = self.conn.cursor()
 
     def login(self, driver):        # 로그인
-        login_btn = driver.find_element_by_xpath(self.login_xpath)      # 페이지 상단의 login
+        login_btn = driver.find_element_by_xpath(self.login_xpath)      # 페이지 상단의 login 버튼
         if login_btn is None:
             login_btn = driver.find_element_by_xpath(self.promote_login_xpath)  # 팝업형식으로 뜨는 로그인
         login_btn.click()
@@ -80,11 +84,11 @@ class InvestingCrawler:
         input_pw = driver.find_element_by_id('loginForm_password')      # pw 텍스트박스 선택
         input_pw.send_keys(self.login_pw)                               # pw 입력
 
-        btn_login = driver.find_element_by_xpath(self.login_confirm_btn_xpath)  # login 버튼
+        btn_login = driver.find_element_by_xpath(self.login_confirm_btn_xpath)  # login 확인 버튼
         btn_login.click()
 
     def start_crawling(self, start_date, end_date):  # 크롤링 시작. 시작일과 종료일 입력받음
-        driver = webdriver.Chrome('../driver/chromedriver.exe', chrome_options=self.options)
+        driver = webdriver.Chrome('../driver/chromedriver.exe', chrome_options=self.options)    # driver 파일 확인하세요
         driver.get(self.base_url)
 
         self.login(driver)
@@ -103,12 +107,12 @@ class InvestingCrawler:
             element_end_date.clear()
             element_end_date.send_keys(end_date)
 
-            element_apply = driver.find_element_by_xpath(self.apply_btn_xpath)      # 적용
+            element_apply = driver.find_element_by_xpath(self.apply_btn_xpath)      # 기간 적용 버튼
             element_apply.click()
 
-            time.sleep(5)
+            time.sleep(5)   # 사이트의 데이터 로딩을 기다리는 시간. wait없이 바로 다운로드하면 가끔 아무값도 들어가지 않음
 
-            btn_download = driver.find_element_by_xpath(self.download_xpath)        # 다운로드
+            btn_download = driver.find_element_by_xpath(self.download_xpath)        # 다운로드 버튼
             btn_download.click()
 
             time.sleep(5)
@@ -121,9 +125,8 @@ class InvestingCrawler:
         driver.close()
         InvestingCrawler().merge_data()
 
-    def merge_data(self):  # 받은 데이터를 하나로 합치고 DB에 저장
+    def merge_data(self):  # 받은 데이터를 하나로 합치고 DB & csv로 저장
         df_db = pd.DataFrame()
-        df_list = []
 
         for idx, name in enumerate(self.new_file_name_list):
 
@@ -142,26 +145,24 @@ class InvestingCrawler:
             else:               # 이후 데이터부터 merge 시작
                 df_db = pd.merge(df_db, df.iloc[:, :2], on='date', how='left')  # kospi 날짜를 기준
 
-        df_db.fillna(method='bfill', inplace=True)  # 이전 데이터로 앞의 데이터를 채운 후
-        df_db.fillna(method='ffill', inplace=True)  # 앞의 데이터로 이전 데이터를 채움 (유로 스톡의 경우 2011년 8월부터 데이터가 있기 때문에 이전 데이터로 공백기간을 매워줌)
+        df_db.fillna(method='bfill', inplace=True)  # 이전 데이터로 앞의 데이터를 채운 후 (4월 2일 데이터가 없을 경우 4월 1일 데이터로 4월 2일 데이터를 채움 )
+        df_db.fillna(method='ffill', inplace=True)  # 앞의 데이터로 이전 데이터를 채움 (유로 스톡의 경우 2011년 8월부터 데이터가 있기 때문에 이전 데이터로 공백기간을 매워준다)
 
         # date 컬럼을 기준으로 내림차순, 원본데이터 반영
         df_db.sort_values(by='date', ascending=True, inplace=True)
 
-        # 공백, 년, 월, 일 제거
+        # 공백, 년, 월, 일 제거하기. 한줄로 가능
         df_db['date'] = df_db['date'].apply(lambda x: x.replace(' ', '')).apply(lambda x: x.replace('년', '')).apply(lambda x: x.replace('월', '')).apply(lambda x: x.replace('일', ''))
         # df_db['date'] = df_db['date'].apply(lambda x: x.replace('년', ''))
         # df_db['date'] = df_db['date'].apply(lambda x: x.replace('월', ''))
         # df_db['date'] = df_db['date'].apply(lambda x: x.replace('일', ''))
 
-        print(df_db)
-        print('@@', df_db.isna().sum())
-
         start_time = time.time()
-        df_db.to_sql('g_data', self.conn, if_exists='replace', index=False)
+        df_db.to_sql('global', self.conn, if_exists='replace', index=False)
+        df_db.to_csv('global.csv', sep=',')
         end_time = time.time()
 
-        print(end_time - start_time)
+        print('total save time :', end_time - start_time)   # db로 저장하는데 꽤 많은 시간이 들어감
 
     # - 값이 들어있는 경우 na로 바꿔주는 함수
     def check_na(self, x):
@@ -169,6 +170,6 @@ class InvestingCrawler:
             return np.nan
         return x
 
-
-# InvestingCrawler().start_crawling('2011/04/01', '2020/12/31')
-InvestingCrawler().merge_data()
+if __name__ == "__main__":
+    # InvestingCrawler().start_crawling('2011/04/01', '2020/12/31')   # 데이터 크롤링 시작. 시작 & 종료일 입력해야하며, 형식 맞춰야함(YYYY/MM/DD)
+    InvestingCrawler().merge_data() # 받은 데이터를 합치는 함수
