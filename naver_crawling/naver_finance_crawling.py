@@ -1,3 +1,5 @@
+# naver_finance_crawling.py
+
 import bs4
 import re
 import time
@@ -11,7 +13,7 @@ from dateutil.relativedelta import relativedelta
 class NaverFinanceCrawler:  # 네이버 증권 크롤링 클래스
     def __init__(self):
         self.upjong_name_list = []  # 네이버 업종 리스트
-        self.code_name_list = []  # 네이버 종목 리스트
+        self.code_name_list = []    # 네이버 종목 리스트
         self.upjong_code_list = []  # 네이버 업종 코드 리스트
 
         self.base_url = 'https://finance.naver.com/'
@@ -20,8 +22,7 @@ class NaverFinanceCrawler:  # 네이버 증권 크롤링 클래스
         self.last_upjong = None
         self.last_company = None
 
-        self.my_date = (datetime.today() + relativedelta(years=-10)).__format__('%Y%m%d')
-        print(self.my_date)
+        self.my_date = (datetime.today() + relativedelta(years=-10)).__format__('%Y%m%d')       # 10년 기준일
 
     def init(self):
         page = urlopen(self.base_url + self.upjong_sub_url)
@@ -128,18 +129,18 @@ class NaverFinanceCrawler:  # 네이버 증권 크롤링 클래스
             print(company_name, '======================================================== except')
             return False
 
+    # 업종명을 param으로 받고 10년 기준일보다 오래된, 시가총액 상위 5개 회사의 종목코드리스트를 리턴
     def get_stock_code(self, upjong_name):
         stock_df = pd.read_csv(upjong_name + '.csv', encoding='utf-8')
         stock_df = stock_df[stock_df['reg_day'] < int(self.my_date)]
         stock_df = stock_df.sort_values('market_cap', ascending=False)
         result = stock_df['code'][:5].tolist()
-        print(upjong_name, result)
         return result
 
-
-# tst = NaverFinanceCrawler()
-# tst.get_upjong()
-# while not tst.upjong_tour():
-#     tst.init()
-#     tst.upjong_tour()
-# print('fin')
+if __name__ == "__main__":
+    tst = NaverFinanceCrawler()
+    tst.get_upjong()
+    while not tst.upjong_tour():
+        tst.init()
+        tst.upjong_tour()
+    print('fin')
