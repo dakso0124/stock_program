@@ -143,7 +143,7 @@ async def on_command_error(ctx, error):
     return None
 
 def start_bot():
-    bot.run(variable.get_token())
+    bot.run("토큰~~~~~~~")
 
 
 # if __name__ == "__main__":
